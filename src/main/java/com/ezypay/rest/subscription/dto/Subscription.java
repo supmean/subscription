@@ -91,7 +91,7 @@ public class Subscription {
 		this.end_date = builder.end_date;
 	}
 
-	public static final String DATE_FORMAT = "dd/MM/yyyy";
+	public static final String DATE_FORMAT = "ddMMyyyy";
 
 	public static Builder builder() {
 		return new Builder();

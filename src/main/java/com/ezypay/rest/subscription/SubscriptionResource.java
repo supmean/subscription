@@ -2,6 +2,9 @@ package com.ezypay.rest.subscription;
 
 import java.math.BigDecimal;
 import java.time.DayOfWeek;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Path;
@@ -12,14 +15,18 @@ import javax.ws.rs.core.Response;
 
 import java.util.Currency;
 import org.apache.log4j.Logger;
+import org.glassfish.jersey.server.ParamException;
 
 import com.ezypay.rest.subscription.dto.Amount;
 import com.ezypay.rest.subscription.dto.Subscription;
 import com.ezypay.rest.subscription.exception.ApplicationException;
 
+
 @Path("/subs")
 public class SubscriptionResource {
 	private static final Logger logger = Logger.getLogger(SubscriptionResource.class);
+	private static final String DATE_FORMAT = "ddMMyyyy";
+	private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_FORMAT);
 	public final SubscriptionDAO subscriptionDao = new SubscriptionDAO();
 
 	/**
@@ -34,8 +41,9 @@ public class SubscriptionResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("/create")
 	public Subscription createSubscription(@QueryParam("amount") @NotNull String amount,
-			@QueryParam("charge_description") String charge_description, @QueryParam("start_date") String start_date,
-			@QueryParam("end_date") String end_date) throws ApplicationException {
+			@QueryParam("charge_description") @NotNull String charge_description,
+			@QueryParam("start_date") @NotNull String start_date, @QueryParam("end_date") @NotNull String end_date)
+			throws ApplicationException {
 
 		// validation section is needed for request parameters
 		Subscription subscription;
@@ -45,7 +53,15 @@ public class SubscriptionResource {
 		String charge_desc = charge_description.trim().toUpperCase();// The parser only takes upper-cases for day of
 																		// week
 		String subscription_type;
+		try {
+			formatter.parse(start_date);
+			formatter.parse(end_date);
 
+		} catch (DateTimeParseException e) {
+			System.err.println("Invalid date format");
+			throw new IllegalArgumentException("Invalid date format");
+
+		}
 		// subscription type logic and construct Subscription at one time
 		// charge description must not be null in parameter
 		if (charge_desc != null && "".equals(charge_desc)) {
@@ -71,6 +87,7 @@ public class SubscriptionResource {
 		return subscription;
 
 	}
+
 
 	/**
 	 * Take a string to check whether or not it is valid for the format of numeric
