@@ -13,19 +13,20 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import java.util.Arrays;
 import java.util.Currency;
 import org.apache.log4j.Logger;
 import org.glassfish.jersey.server.ParamException;
 
 import com.ezypay.rest.subscription.dto.Amount;
 import com.ezypay.rest.subscription.dto.Subscription;
+import com.ezypay.rest.subscription.dto.SubscriptionRequestMessage;
 import com.ezypay.rest.subscription.exception.ApplicationException;
 
-
-@Path("/subs")
+@Path("/subscription")
 public class SubscriptionResource {
 	private static final Logger logger = Logger.getLogger(SubscriptionResource.class);
-	private static final String DATE_FORMAT = "ddMMyyyy";
+	private static final String DATE_FORMAT = "dd/MM/yyyy";
 	private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_FORMAT);
 	public final SubscriptionDAO subscriptionDao = new SubscriptionDAO();
 
@@ -37,25 +38,23 @@ public class SubscriptionResource {
 	 * @return
 	 * @throws ApplicationException
 	 */
-	@Consumes(MediaType.TEXT_PLAIN)
+	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("/create")
-	public Subscription createSubscription(@QueryParam("amount") @NotNull String amount,
-			@QueryParam("charge_description") @NotNull String charge_description,
-			@QueryParam("start_date") @NotNull String start_date, @QueryParam("end_date") @NotNull String end_date)
-			throws ApplicationException {
+	public Subscription createSubscription(SubscriptionRequestMessage subRequestMessage) throws ApplicationException {
 
 		// validation section is needed for request parameters
 		Subscription subscription;
 		// Build Amount
-		Amount amt = new Amount.Builder().withCurrency(Currency.getInstance("AUD")).withValue(new BigDecimal(amount))
-				.build();
-		String charge_desc = charge_description.trim().toUpperCase();// The parser only takes upper-cases for day of
-																		// week
+		Amount amt = new Amount.Builder().withCurrency(Currency.getInstance("AUD"))
+				.withValue(new BigDecimal(subRequestMessage.getAmount())).build();
+		String charge_desc = subRequestMessage.getCharge_description().trim().toUpperCase();// The parser only takes
+																							// upper-cases for day of
+		// week
 		String subscription_type;
 		try {
-			formatter.parse(start_date);
-			formatter.parse(end_date);
+			formatter.parse(subRequestMessage.getStart_date());
+			formatter.parse(subRequestMessage.getEnd_date());
 
 		} catch (DateTimeParseException e) {
 			System.err.println("Invalid date format");
@@ -78,7 +77,8 @@ public class SubscriptionResource {
 		// Construct Subscription
 		try {
 			subscription = new Subscription.Builder().withAmount(amt).withSubscription_type(subscription_type)
-					.withStartDateAndEndDate(start_date, end_date).build(charge_desc);
+					.withStartDateAndEndDate(subRequestMessage.getStart_date(), subRequestMessage.getEnd_date())
+					.build(charge_desc);
 		} catch (Exception exception) {
 			logger.error(exception.getMessage());
 			throw new ApplicationException();
@@ -87,7 +87,6 @@ public class SubscriptionResource {
 		return subscription;
 
 	}
-
 
 	/**
 	 * Take a string to check whether or not it is valid for the format of numeric
@@ -110,16 +109,23 @@ public class SubscriptionResource {
 	 * @return
 	 */
 	public final static boolean isDayOfWeek(String s) {
-
-		if (s != null && !"".equals(s.trim())) {
-			try {
-				DayOfWeek.valueOf(s);
-				return true;
-			} catch (IllegalArgumentException ex) {
-				return false;
+		boolean result = false;
+		if (s != null && !"".equals(s.trim().toUpperCase())) {
+			for (DayOfWeek d : DayOfWeek.values()) {
+				if (d.name().contentEquals(s.toUpperCase())) {
+					result = true;
+				}
 			}
-		} else
-			return false;
+		} 
+		return result;
+
+	}
+
+	public static void main(String[] args) {
+		String s = "30".toUpperCase();
+		System.out.println(s + " is a date number? " + isNumericDate(s));
+		String d = "tues".toUpperCase();
+		System.out.println(d + " is a day of week? "+ isDayOfWeek(d));
 
 	}
 }

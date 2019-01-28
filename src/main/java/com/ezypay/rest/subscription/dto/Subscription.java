@@ -12,6 +12,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.ezypay.rest.subscription.dto.Amount;
 
 public class Subscription {
 	private String id;
@@ -91,7 +92,7 @@ public class Subscription {
 		this.end_date = builder.end_date;
 	}
 
-	public static final String DATE_FORMAT = "ddMMyyyy";
+	public static final String DATE_FORMAT = "dd/MM/yyyy";
 
 	public static Builder builder() {
 		return new Builder();
@@ -99,7 +100,6 @@ public class Subscription {
 
 	public static class Builder {
 
-		
 		private Amount amount;
 		private String subscription_type;
 		private String[] inovice_dates;
@@ -128,7 +128,7 @@ public class Subscription {
 			this.endD = LocalDate.parse(end_date, formatter);
 			if (startD.isAfter(endD))
 				throw new IllegalArgumentException("dates are in wrong order");
-			if (startD.plusMonths(3).isAfter(endD))
+			if (!startD.plusMonths(3).isAfter(endD))
 				throw new IllegalArgumentException("Time span is over three months");
 			this.start_date = start_date;
 			this.end_date = end_date;
@@ -159,9 +159,54 @@ public class Subscription {
 			return invoice_dates;
 		}
 
+		/**
+		 * Take a string to check whether or not it is valid for the format of numeric
+		 * date in month
+		 * 
+		 * @param s
+		 * @return
+		 */
+		public boolean isNumericDate(String s) {
+			if (s != null && !"".equals(s.trim()))
+				return s.matches("^((0?[1-9])|((1|2)[0-9])|30|31)$");
+			else
+				return false;
+		}
+
+		/**
+		 * Take a string to check whether or not it can be parsed as any day of week
+		 * 
+		 * @param s
+		 * @return
+		 */
+		public boolean isDayOfWeek(String s) {
+
+			if (s != null && !"".equals(s.trim().toUpperCase())) {
+				try {
+					DayOfWeek.valueOf(s);
+					return true;
+				} catch (IllegalArgumentException ex) {
+					return false;
+				}
+			} else
+				return false;
+
+		}
+
 		private void setInvoiceDate(String charge_desc) throws Exception {
 
 			// Use start_date, end_date and frequency to create invoice_dates array
+			if (charge_desc != null && "".equals(charge_desc)) {
+				this.subscription_type = "DAILY";
+
+			} else if (isNumericDate(charge_desc)) {
+				this.subscription_type = "MONTHLY";
+
+			} else if (isDayOfWeek(charge_desc)) {
+				this.subscription_type = "WEEKLY";
+			} else {
+				throw new IllegalArgumentException("charge description is invalid");
+			}
 
 			switch (this.subscription_type) {
 
