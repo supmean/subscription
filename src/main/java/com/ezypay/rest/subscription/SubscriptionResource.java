@@ -48,9 +48,7 @@ public class SubscriptionResource {
 		// Build Amount
 		Amount amt = new Amount.Builder().withCurrency(Currency.getInstance("AUD"))
 				.withValue(new BigDecimal(subRequestMessage.getAmount())).build();
-		String charge_desc = subRequestMessage.getCharge_description().trim().toUpperCase();// The parser only takes
-																							// upper-cases for day of
-		// week
+		String charge_desc = subRequestMessage.getCharge_description().trim().toUpperCase();
 		String subscription_type;
 		try {
 			formatter.parse(subRequestMessage.getStart_date());
@@ -116,7 +114,7 @@ public class SubscriptionResource {
 					result = true;
 				}
 			}
-		} 
+		}
 		return result;
 
 	}
@@ -125,7 +123,7 @@ public class SubscriptionResource {
 		String s = "30".toUpperCase();
 		System.out.println(s + " is a date number? " + isNumericDate(s));
 		String d = "tues".toUpperCase();
-		System.out.println(d + " is a day of week? "+ isDayOfWeek(d));
+		System.out.println(d + " is a day of week? " + isDayOfWeek(d));
 
 	}
 }
